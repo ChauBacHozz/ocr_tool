@@ -35,7 +35,7 @@ jobs:
 
       - name: Build for Windows
         run: |
-          fyne-cross windows -arch amd64 -icon icon.png -name "Traphaco OCR"
+          fyne-cross windows -arch amd64 -icon icon.png -name "Traphaco OCR" -app-id com.traphaco.ocr
 
       - name: Prepare dist folder
         run: |
@@ -79,7 +79,7 @@ jobs:
 
       - name: Build for macOS
         run: |
-          fyne package -os darwin -icon icon.png -name "Traphaco OCR"
+          fyne package -os darwin -icon icon.png -name "Traphaco OCR" -app-id com.traphaco.ocr
 
       - name: Prepare dist folder
         run: |

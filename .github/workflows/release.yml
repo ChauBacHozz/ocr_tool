@@ -1,9 +1,9 @@
-name: Release Windows Build
+name: Release Windows & macOS Build
 
 on:
   push:
     tags:
-      - 'v*'  # Trigger khi push tag kiểu v1.0.0, v1.2.3,...
+      - 'v*'
 
 jobs:
   build-windows:
@@ -21,8 +21,17 @@ jobs:
       - name: Install fyne-cross
         run: go install github.com/fyne-io/fyne-cross@latest
 
-      - name: Install Docker (dùng để fyne-cross build)
+      - name: Install Docker
         uses: docker/setup-buildx-action@v3
+
+      - name: Download models and bin from release v0.0.1
+        run: |
+          gh release download v0.0.1 --pattern "models.zip" --dir ./
+          gh release download v0.0.1 --pattern "bin.zip" --dir ./
+          unzip models.zip
+          unzip bin.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build for Windows
         run: |
@@ -36,10 +45,54 @@ jobs:
           cp -R models dist_windows/
           zip -r "Traphaco_OCR_Windows.zip" dist_windows/
 
-      - name: Create GitHub Release
+      - name: Create GitHub Release (Windows)
         uses: softprops/action-gh-release@v2
         with:
           files: Traphaco_OCR_Windows.zip
-          generate_release_notes: true  # Tự động tạo changelog từ commit
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-macos:
+    runs-on: macos-latest  # Phải dùng máy macOS thật để build .app
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Install fyne CLI
+        run: go install fyne.io/fyne/v2/cmd/fyne@latest
+
+      - name: Download models and bin from release v0.0.1
+        run: |
+          gh release download v0.0.1 --pattern "models.zip" --dir ./
+          gh release download v0.0.1 --pattern "bin.zip" --dir ./
+          unzip models.zip
+          unzip bin.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build for macOS
+        run: |
+          fyne package -os darwin -icon icon.png -name "Traphaco OCR"
+
+      - name: Prepare dist folder
+        run: |
+          mkdir -p dist_macos
+          cp -R "Traphaco OCR.app" dist_macos/
+          cp -R bin dist_macos/
+          cp -R models dist_macos/
+          zip -r "Traphaco_OCR_macOS.zip" dist_macos/
+
+      - name: Upload to GitHub Release (macOS)
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Traphaco_OCR_macOS.zip
+          generate_release_notes: false  # Windows job đã tạo rồi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

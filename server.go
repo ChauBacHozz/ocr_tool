@@ -45,11 +45,20 @@ func startServer() error {
 
 	baseDir := getResourcePath()
 
-	binary := filepath.Join(baseDir, "bin", "llama-server")
+	var binary string
+
+	switch runtime.GOOS {
+	case "windows":
+		binary = filepath.Join(baseDir, "bin", "llama-b8851-bin-win-cpu-x64", "llama-server.exe")
+	case "darwin":
+		binary = filepath.Join(baseDir, "bin", "llama-b8838-mac", "llama-server")
+	default:
+		return fmt.Errorf("hệ điều hành không được hỗ trợ: %s", runtime.GOOS)
+	}
+
 	modelPath := filepath.Join(baseDir, "models", "LightOnOCR-2-1B-Q4_K_M.gguf")
 	mmprojPath := filepath.Join(baseDir, "models", "mmproj-LightOnOCR-2-1B-Q8_0.gguf")
 
-	// Kiểm tra lại file lần cuối
 	if _, err := os.Stat(binary); err != nil {
 		return fmt.Errorf("không tìm thấy llama-server tại: %s. Vui lòng đảm bảo thư mục 'bin' nằm cùng cấp với ứng dụng.", binary)
 	}
@@ -58,8 +67,8 @@ func startServer() error {
 		"-m", modelPath,
 		"--mmproj", mmprojPath,
 		"--port", "8080",
-		"-c", "6000", // Giảm context xuống mức đủ dùng cho OCR (2k) để tiết kiệm RAM
-		"-t", "1", // Giới hạn 4 threads để không làm treo máy
+		"-c", "6000",
+		"-t", "1",
 		"-fa", "on",
 		"--parallel", "1",
 	)
